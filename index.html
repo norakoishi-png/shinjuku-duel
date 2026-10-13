@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="description" content="新宿决战 简化版 - JUJUTSU PHYSICS DUEL，五条悟 VS 两面宿傩的物理术式对决" />
+  <title>新宿决战 · JUJUTSU PHYSICS DUEL（简化版）</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="app">
+    <div class="stage" id="stage">
+      <!-- 战斗画布 -->
+      <canvas id="game-canvas" aria-label="新宿决战战斗区域"></canvas>
+
+      <!-- ===== 顶部 HUD ===== -->
+      <div class="hud" id="hud" aria-hidden="true">
+        <!-- 五条悟（玩家） -->
+        <div class="fighter-hud fighter-hud-left">
+          <div class="fighter-name"><span class="dot dot-gojo"></span>五条悟</div>
+          <div class="bar bar-hp"><div class="bar-fill hp-gojo" id="hp-gojo"></div></div>
+          <div class="bar bar-charge"><div class="bar-fill charge-gojo" id="charge-gojo"></div></div>
+        </div>
+
+        <!-- 中央：难度 + 声音 + 暂停 -->
+        <div class="hud-center">
+          <span class="diff-badge" id="diff-badge">轻松</span>
+          <div class="hud-btns">
+            <button type="button" class="icon-btn" id="btn-music" title="背景音乐开关" aria-label="背景音乐开关">♪</button>
+            <button type="button" class="icon-btn" id="btn-sfx" title="音效开关" aria-label="音效开关">♬</button>
+            <button type="button" class="icon-btn" id="btn-pause" title="暂停 (Esc)" aria-label="暂停">❚❚</button>
+          </div>
+          <!-- 魔虚罗血条（修罗难度参战後显示） -->
+          <div class="mahoraga-bar" id="mahoraga-bar">
+            <span class="maho-label">八握剑异戒神将 · 魔虚罗</span>
+            <div class="bar bar-hp bar-maho"><div class="bar-fill hp-maho" id="hp-maho"></div></div>
+          </div>
+        </div>
+
+        <!-- 两面宿傩（电脑） -->
+        <div class="fighter-hud fighter-hud-right">
+          <div class="fighter-name">两面宿傩<span class="dot dot-sukuna"></span></div>
+          <div class="bar bar-hp"><div class="bar-fill hp-sukuna" id="hp-sukuna"></div></div>
+          <div class="bar bar-charge"><div class="bar-fill charge-sukuna" id="charge-sukuna"></div></div>
+        </div>
+      </div>
+
+      <!-- 操作提示 -->
+      <div class="tap-hint" id="tap-hint">点击画面 · 以术式反作用力翻转身体，寻找命中角度</div>
+
+      <!-- 倒计时 -->
+      <div class="countdown hidden" id="countdown"></div>
+
+      <!-- ===== 主菜单 ===== -->
+      <section class="overlay screen-menu" id="screen-menu">
+        <div class="menu-inner">
+          <p class="en-title">JUJUTSU PHYSICS DUEL</p>
+          <h1 class="game-title">新宿决战</h1>
+          <p class="tagline">用术式制造反作用力，在翻转中寻找命中角度。<br />操控 <b class="tx-gojo">五条悟</b>，击败电脑操控的 <b class="tx-sukuna">两面宿傩</b>。</p>
+
+          <div class="diff-list" id="diff-list" role="radiogroup" aria-label="选择难度">
+            <button type="button" class="diff-card selected" data-diff="easy" role="radio" aria-checked="true">
+              <span class="diff-no">01</span><span class="diff-name">轻松</span>
+              <span class="diff-desc">宿傩出招较慢，适合熟悉翻转节奏</span>
+            </button>
+            <button type="button" class="diff-card" data-diff="normal" role="radio" aria-checked="false">
+              <span class="diff-no">02</span><span class="diff-name">标准</span>
+              <span class="diff-desc">会预判走位，伤害与速度提升</span>
+            </button>
+            <button type="button" class="diff-card" data-diff="shura" role="radio" aria-checked="false">
+              <span class="diff-no">03</span><span class="diff-name">修罗</span>
+              <span class="diff-desc"><b>魔虚罗</b>将在宿傩受创时参战</span>
+            </button>
+          </div>
+
+          <button type="button" class="btn-start" id="btn-start-menu">开 战</button>
+          <p class="footer-tip">
+            操作：点击/触摸屏幕或按空格释放术式 · Esc 暂停 · M 静音<br />
+            术式循环：苍 → 苍 → <b>赫</b>；咒力满槽时下一发为必杀 <b>虚式「茈」</b>
+          </p>
+          <p class="credit">同人简化版 · 角色名与背景音乐（bgm-battle-v1）沿用原作免费同人游戏资源</p>
+        </div>
+      </section>
+
+      <!-- ===== 暂停 ===== -->
+      <section class="overlay hidden" id="screen-pause">
+        <div class="small-panel">
+          <h2 class="panel-title">暂停</h2>
+          <button type="button" class="btn-action" id="btn-resume">继续战斗</button>
+          <button type="button" class="btn-action btn-sub" id="btn-restart-pause">重新开始</button>
+          <button type="button" class="btn-action btn-sub" id="btn-menu-pause">返回主菜单</button>
+        </div>
+      </section>
+
+      <!-- ===== 结算 ===== -->
+      <section class="overlay hidden" id="screen-result">
+        <div class="small-panel">
+          <h2 class="panel-title result-title" id="result-title">五条悟 胜</h2>
+          <p class="result-sub" id="result-sub"></p>
+          <div class="result-stats" id="result-stats"></div>
+          <button type="button" class="btn-action" id="btn-rematch">再战一局</button>
+          <button type="button" class="btn-action btn-sub" id="btn-menu-result">返回主菜单</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- 背景音乐：沿用原作资源 -->
+  <audio id="bgm" src="https://fancy-chaja-9945bc.netlify.app/assets/audio/bgm-battle-v1.mp3" loop preload="none"></audio>
+
+  <!-- 脚本：命名空间模块化，支持 file:// 直接打开 -->
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

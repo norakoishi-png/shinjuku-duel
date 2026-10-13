@@ -1,0 +1,374 @@
+/* ============================================================
+   新宿决战（简化版）- 样式表
+   暗紫夜色 · 苍蓝 vs 赫红 · 16:10 自适应战场
+   ============================================================ */
+
+:root {
+  --bg: #07080f;
+  --gojo: #44d9ff;
+  --gojo-deep: #266fff;
+  --sukuna: #ff4e64;
+  --sukuna-deep: #9a1732;
+  --purple: #b05cff;
+  --gold: #e4c866;
+  --text: #eef1ff;
+  --text-dim: #8b91b3;
+  --panel: rgba(14, 16, 32, 0.86);
+  --border: rgba(120, 130, 200, 0.22);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  background:
+    radial-gradient(1100px 500px at 18% -10%, rgba(38, 111, 255, 0.16), transparent 60%),
+    radial-gradient(1100px 500px at 82% -10%, rgba(154, 23, 50, 0.22), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app { width: 100%; max-width: 1080px; }
+
+/* ---------- 战场舞台（16:10 等比） ---------- */
+.stage {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 62.5%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: 0 18px 70px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(0, 0, 0, 0.4);
+  background: #05060d;
+  user-select: none;
+}
+
+#game-canvas {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
+}
+
+/* ---------- HUD ---------- */
+.hud {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 12px 14px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.fighter-hud { width: 32%; display: flex; flex-direction: column; gap: 4px; }
+.fighter-hud-right { align-items: flex-end; }
+
+.fighter-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  display: flex; align-items: center; gap: 6px;
+}
+.fighter-hud-right .fighter-name { flex-direction: row-reverse; }
+
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.dot-gojo { background: var(--gojo); box-shadow: 0 0 8px var(--gojo); }
+.dot-sukuna { background: var(--sukuna); box-shadow: 0 0 8px var(--sukuna); }
+
+.bar {
+  width: 100%;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+}
+.bar-charge { height: 5px; margin-top: 1px; }
+
+.bar-fill { height: 100%; width: 100%; border-radius: 5px; transition: width 0.12s linear; }
+.hp-gojo { background: linear-gradient(90deg, var(--gojo-deep), var(--gojo)); box-shadow: 0 0 10px rgba(68, 217, 255, 0.6); }
+.hp-sukuna { background: linear-gradient(270deg, var(--sukuna-deep), var(--sukuna)); box-shadow: 0 0 10px rgba(255, 78, 100, 0.6); float: right; }
+.charge-gojo { background: linear-gradient(90deg, #7c5cff, var(--purple)); }
+.charge-sukuna { background: linear-gradient(270deg, #ff8a3d, #ffb23f); float: right; }
+.bar-fill.ult-ready { animation: ultPulse 0.7s ease-in-out infinite alternate; }
+@keyframes ultPulse { from { filter: brightness(1); } to { filter: brightness(1.9); } }
+
+.hud-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-width: 150px;
+}
+
+.diff-badge {
+  font-size: 12px;
+  letter-spacing: 3px;
+  padding: 3px 14px;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+
+.hud-btns { display: flex; gap: 6px; pointer-events: auto; }
+
+.icon-btn {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.icon-btn:hover { background: rgba(80, 90, 160, 0.4); }
+.icon-btn.off { color: #555c7a; text-decoration: line-through; }
+
+.mahoraga-bar {
+  width: 190px;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: opacity 0.4s, transform 0.4s;
+}
+.mahoraga-bar.show { opacity: 1; transform: translateY(0); }
+.maho-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--gold);
+  margin-bottom: 2px;
+  text-shadow: 0 1px 4px #000;
+}
+.bar-maho { height: 8px; }
+.hp-maho { background: linear-gradient(90deg, #8a7320, var(--gold)); box-shadow: 0 0 8px rgba(228, 200, 102, 0.6); }
+
+/* ---------- 点击提示 ---------- */
+.tap-hint {
+  position: absolute;
+  bottom: 10px; left: 0; right: 0;
+  text-align: center;
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: rgba(200, 205, 240, 0.75);
+  text-shadow: 0 1px 4px #000;
+  z-index: 4;
+  pointer-events: none;
+  transition: opacity 0.6s;
+}
+.tap-hint.fade { opacity: 0; }
+
+/* ---------- 倒计时 ---------- */
+.countdown {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(56px, 12vw, 120px);
+  font-weight: 900;
+  letter-spacing: 10px;
+  color: #fff;
+  text-shadow: 0 0 40px rgba(68, 217, 255, 0.8), 0 0 90px rgba(176, 92, 255, 0.6);
+  z-index: 6;
+  pointer-events: none;
+}
+.countdown.pop { animation: countPop 0.72s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+@keyframes countPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  35% { transform: scale(1.08); opacity: 1; }
+  75% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* ---------- 遮罩面板通用 ---------- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 6, 13, 0.72);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  animation: fadeIn 0.25s ease both;
+  padding: 18px;
+  overflow-y: auto;
+}
+.overlay.hidden { display: none; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ---------- 主菜单 ---------- */
+.menu-inner { text-align: center; max-width: 620px; width: 100%; margin: auto; }
+
+.en-title {
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.game-title {
+  font-size: clamp(38px, 7vw, 68px);
+  font-weight: 900;
+  letter-spacing: 14px;
+  text-indent: 14px;
+  background: linear-gradient(90deg, var(--gojo), #c4b5fd 50%, var(--sukuna));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 24px rgba(120, 90, 255, 0.45));
+}
+
+.tagline {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--text-dim);
+}
+.tx-gojo { color: var(--gojo); }
+.tx-sukuna { color: var(--sukuna); }
+
+.diff-list {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0 18px;
+}
+.diff-card {
+  flex: 1;
+  background: rgba(20, 23, 46, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 10px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.12s, border-color 0.15s, box-shadow 0.15s;
+}
+.diff-card:hover { transform: translateY(-2px); }
+.diff-card.selected {
+  border-color: var(--gojo);
+  box-shadow: 0 0 0 1px var(--gojo), 0 6px 22px rgba(68, 217, 255, 0.18);
+  background: rgba(24, 40, 70, 0.85);
+}
+.diff-no { display: block; font-size: 10px; color: var(--text-dim); letter-spacing: 2px; }
+.diff-name { display: block; font-size: 18px; font-weight: 800; margin: 3px 0 5px; letter-spacing: 3px; }
+.diff-desc { display: block; font-size: 11px; line-height: 1.6; color: var(--text-dim); }
+.diff-desc b { color: var(--gold); }
+
+.btn-start {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 10px;
+  text-indent: 10px;
+  color: #04121f;
+  padding: 13px 60px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--gojo), #6ea8ff);
+  box-shadow: 0 8px 30px rgba(68, 217, 255, 0.35);
+  transition: transform 0.12s, box-shadow 0.15s;
+}
+.btn-start:hover { transform: translateY(-2px); box-shadow: 0 12px 38px rgba(68, 217, 255, 0.5); }
+.btn-start:active { transform: scale(0.97); }
+
+.footer-tip {
+  margin-top: 16px;
+  font-size: 11px;
+  line-height: 2;
+  color: var(--text-dim);
+}
+.footer-tip b { color: var(--purple); }
+
+.credit { margin-top: 10px; font-size: 10px; color: #565d80; }
+
+/* ---------- 小面板（暂停/结算） ---------- */
+.small-panel {
+  text-align: center;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 26px 34px;
+  min-width: 260px;
+}
+
+.panel-title { font-size: 28px; letter-spacing: 8px; text-indent: 8px; margin-bottom: 16px; }
+
+.result-title.win {
+  color: var(--gojo);
+  text-shadow: 0 0 24px rgba(68, 217, 255, 0.6);
+}
+.result-title.lose {
+  color: var(--sukuna);
+  text-shadow: 0 0 24px rgba(255, 78, 100, 0.6);
+}
+
+.result-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.8; }
+
+.result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 18px;
+}
+.result-stats b { display: block; font-size: 20px; color: var(--text); margin-top: 2px; }
+
+.btn-action {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 11px 0;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-indent: 4px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--gojo), #6ea8ff);
+  color: #04121f;
+  transition: transform 0.12s;
+}
+.btn-action:active { transform: scale(0.97); }
+.btn-sub {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+.btn-sub:hover { background: rgba(255, 255, 255, 0.06); }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 720px) {
+  body { padding: 0; align-items: stretch; }
+  .app { max-width: none; }
+  .stage { border-radius: 0; border: none; }
+  .fighter-hud { width: 38%; }
+  .fighter-name { font-size: 12px; letter-spacing: 1px; }
+  .bar { height: 9px; }
+  .hud-center { min-width: 96px; }
+  .mahoraga-bar { width: 130px; }
+  .diff-list { flex-direction: column; gap: 7px; margin: 14px 0; }
+  .game-title { letter-spacing: 8px; text-indent: 8px; }
+  .small-panel { padding: 20px; }
+}
